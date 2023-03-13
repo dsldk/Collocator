@@ -105,8 +105,19 @@ async def search_ngrams(
         "SELECT w.word, w.position, n.ngram, n.length, n.score FROM ngrams n, words w WHERE n.id = w.ngram_id AND w.word = ?",
         (word,),
     )
+    # Handle threshold
+    result = [
+        (word, position, ngram, length, score)
+        for word, position, ngram, length, score in cur.fetchall()
+        if score >= threshold
+    ]
+
+    # Sort by score
+    result.sort(key=lambda x: x[4], reverse=True)
+
+    # Split into left, right and in contexts
     ngrams = {"left": [], "right": [], "in": []}
-    for word, position, ngram, length, score in cur.fetchall():
+    for word, position, ngram, length, score in result:
         if position == 0:
             ngrams["right"].append((ngram, score))
         elif position == length - 1:
@@ -114,35 +125,6 @@ async def search_ngrams(
         else:
             ngrams["in"].append((ngram, score))
     return ngrams
-
-
-DICT_URL = CONFIG.get("dsllex", "dict_url")
-API_KEY = CONFIG.get("dsllex", "api_key")
-
-
-def call_dictionary_forms(query_word: str, dictionary: str = "ddo") -> list:
-    """Get dictionary information for a word."""
-
-    if not isinstance(query_word, str) or query_word == "":
-        raise TypeError(f"The input word '{query_word}' is not a valid input.")
-
-    valid_dictionaries = CONFIG.get("dsllex", "dictionaries").split(",")
-
-    if dictionary not in valid_dictionaries:
-        raise TypeError(
-            f"The input dictionary '{dictionary}'"
-            f" is not in the list of valid dictionaries: '{valid_dictionaries}'"
-        )
-
-    params = {"api-key": API_KEY}
-    response = requests.get(
-        f"{DICT_URL}/forms/{dictionary}/{query_word}", params=params
-    )
-    result = json.loads(response.text)
-
-    if not result:
-        return []
-    return [form.get("form", "") for form in result]
 
 
 if __name__ == "__main__":

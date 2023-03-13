@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from collocator import CONFIG, logger
-from collocator.main import load_all_models, search_ngrams, call_dictionary_forms
+from collocator.main import load_all_models, search_ngrams
 
 title = CONFIG.get("general", "title")
 
@@ -30,18 +30,13 @@ async def check(
     word: str,
     model,
     threshold: float = 7.0,
-    include_forms: bool = True,
     bundle_contexts: bool = True,
     forms: str = "",
-    dictionary: str = "ddo",
 ) -> JSONResponse:
     """Check wheter word might be a valid word in the given language."""
     lookup_forms = [word]
-    if include_forms:
-        if forms:
-            lookup_forms += forms.split(",")
-        else:
-            lookup_forms += call_dictionary_forms(word, dictionary)
+    if forms:
+        lookup_forms += forms.split(",")
         lookup_forms = list(set(lookup_forms))
     result = {}
     for form in lookup_forms:
@@ -54,7 +49,7 @@ async def check(
         "word": word,
         "threshold": threshold,
         "ngrams": result,
-        "include_forms": include_forms,
+        "included_forms": lookup_forms,
         "model_info": {},
     }
     # Copy keys from model to model_info
