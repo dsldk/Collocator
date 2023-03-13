@@ -25,6 +25,8 @@ async def load_all_models() -> dict:
             "delimiter": ngrams.get("delimiter", "_"),
             "min_count": ngrams.get("min_count", 0.0),
             "threshold": ngrams.get("threshold", 0.0),
+            "size": ngrams.get("size", 0),
+            "scorer": ngrams.get("scorer", "n/a"),
         }
 
     return models
