@@ -32,6 +32,7 @@ async def load_all_models() -> dict:
     return models
 
 
+@timeit
 async def load_ngrams(source_file: str) -> dict:
     """Load ngrams from json file."""
     logger.info("Loading ngrams from %s", source_file)
@@ -63,7 +64,7 @@ async def store_ngrams_in_database(
         logger.info("Using existing database %s", database_file)
         return conn
 
-    logger.info(f'"Creating" database {database_file}')
+    logger.info(f"Creating database {database_file}")
     # Create table for ngrams wiit id, ngram, score and length of ngram
     cur.execute("DROP TABLE IF EXISTS ngrams")
     cur.execute(
