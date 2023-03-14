@@ -26,12 +26,13 @@ async def startup_event() -> None:
 
 
 @app.get("/search/{model}/{word}", response_class=JSONResponse)
-async def check(
+async def search(
     word: str,
     model,
-    threshold: float = 7.0,
+    threshold: float = 0.3,
     bundle_contexts: bool = True,
     forms: str = "",
+    verbose_output: bool = True,
 ) -> JSONResponse:
     """Check wheter word might be a valid word in the given language."""
     lookup_forms = [word]
@@ -50,12 +51,13 @@ async def check(
         "threshold": threshold,
         "ngrams": result,
         "included_forms": lookup_forms,
-        "model_info": {},
     }
-    # Copy keys from model to model_info
-    for key in models.get(model, {}):
-        if key not in ["connection", "ngrams"]:
-            message["model_info"][key] = models[model][key]
+    if verbose_output:
+        message["model_info"] = {}
+        # Copy keys from model to model_info
+        for key in models.get(model, {}):
+            if key not in ["connection", "ngrams"]:
+                message["model_info"][key] = models[model][key]
     return JSONResponse(content=message)
 
 
