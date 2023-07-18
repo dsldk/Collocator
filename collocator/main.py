@@ -2,7 +2,6 @@
 
 import json
 import os
-import requests
 import sqlite3
 import tempfile
 from pathlib import Path
