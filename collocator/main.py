@@ -5,6 +5,7 @@ import os
 import requests
 import sqlite3
 import tempfile
+from pathlib import Path
 
 from collocator import logger, timeit, CONFIG
 
@@ -36,6 +37,8 @@ async def load_all_models() -> dict:
 async def load_ngrams(source_file: str) -> dict:
     """Load ngrams from json file."""
     logger.info("Loading ngrams from %s", source_file)
+    # Determine relative path to source file
+    source_file = str(Path(__file__).parent.resolve() / source_file)
     with open(source_file, "r") as f:
         ngrams = json.load(f)
     return ngrams

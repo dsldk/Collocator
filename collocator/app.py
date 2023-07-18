@@ -62,16 +62,16 @@ async def search(
 
 
 @app.get("/models", response_class=JSONResponse)
-def available_models() -> JSONResponse:
+async def available_models() -> JSONResponse:
     """Return a list of available models."""
-    model_info = {}
-    for model_name in models:
-        model_info[model_name] = {}
-        for key in models[model_name]:
-            if key not in ["connection", "ngrams"]:
-                model_info[model_name][key] = models[model_name][key]
+    # model_info = {}
+    # for model_name in models:
+    #     model_info[model_name] = {}
+    #     for key in models[model_name]:
+    #         if key not in ["connection", "ngrams"]:
+    #             model_info[model_name][key] = models[model_name][key]
 
-    return JSONResponse(content=model_info)
+    return JSONResponse(content=models)
 
 
 def bundle_context(form_result: dict) -> dict:

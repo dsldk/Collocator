@@ -1,3 +1,8 @@
+# DSL
+config.ini
+tmp_*
+*_t01_*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
