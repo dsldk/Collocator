@@ -1,4 +1,5 @@
 fastapi
+git+https://github.com/dsldk/fastapi_simple_security
 httpx
 pytest
 pytest-asyncio

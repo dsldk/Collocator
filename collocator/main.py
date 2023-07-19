@@ -9,7 +9,7 @@ from pathlib import Path
 from collocator import logger, timeit, CONFIG
 
 
-async def load_all_models() -> dict:
+async def load_all_models(force: bool = False) -> dict:
     """Load all models from config."""
     models = {}
     for model_name in CONFIG.get("general", "models").split(","):
@@ -17,7 +17,7 @@ async def load_all_models() -> dict:
             CONFIG.get("general", "data_dir"), CONFIG.get(model_name, "source_file")
         )
         ngrams = await load_ngrams(source_file)
-        connection = await store_ngrams_in_database(ngrams, model_name, force_new=True)
+        connection = await store_ngrams_in_database(ngrams, model_name, force_new=force)
         models[model_name] = {
             "title": CONFIG.get(model_name, "title"),
             "description": CONFIG.get(model_name, "description"),
@@ -136,8 +136,8 @@ if __name__ == "__main__":
     import sys
 
     ngrams = load_ngrams(sys.argv[1])
-    conn = store_ngrams_in_database(ngrams)
+    # conn = store_ngrams_in_database(ngrams, model_name="test", force_new=True)
 
-    for word in sys.argv[2:]:
-        result = search_ngrams(word, conn)
-        print(result)
+    # for word in sys.argv[2:]:
+    #     result = search_ngrams(word, conn)
+    #     print(result)

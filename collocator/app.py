@@ -1,26 +1,50 @@
 """FastAPI service for wordres."""
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi_simple_security import api_key_router, api_key_security
+from os import environ
+from typing import Dict, List
 
 from collocator import CONFIG, logger
 from collocator.main import load_all_models, search_ngrams
 
-title = CONFIG.get("general", "title")
+enable_security = environ.get("ENABLE_SECURITY", "False")
+
+enable_security = enable_security.lower() in ("true", "1") and True or False
+security_str = (
+    "\033[1;32mENABLED\033[0m" if enable_security else "\033[1;31mDISABLED\033[0m"
+)
+
+logger.info(f"Security: {security_str}")
+logger.info(f"Logging level: {environ.get('LOG_LEVEL')}")
+
+origins = (
+    CONFIG.has_section("webservice")
+    and CONFIG.has_option("webservice", "origin")
+    and CONFIG.get("webservice", "origin")
+    or None
+)
+logger.info(f"Origins: {origins}")
 
 app = FastAPI(
     title=CONFIG.get("general", "title"),
     description=CONFIG.get("general", "description"),
 )
+if origins:
+    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True)
+app.include_router(api_key_router, prefix="/auth", tags=["_auth"])
 
 
 @app.get("/health", response_class=PlainTextResponse)
 def healthcheck() -> str:
-    """Healthcheck, for use in automatic ."""
+    """Healthcheck, for use in automatic monitoring."""
     return "200"
 
 
 @app.on_event("startup")
 async def startup_event() -> None:
+    """Load all models on startup."""
     global models
     models = await load_all_models()
 
@@ -61,20 +85,21 @@ async def search(
     return JSONResponse(content=message)
 
 
-@app.get("/models", response_class=JSONResponse)
+@app.get(
+    "/models", response_class=JSONResponse, dependencies=[Depends(api_key_security)]
+)
 async def available_models() -> JSONResponse:
     """Return a list of available models."""
-    # model_info = {}
-    # for model_name in models:
-    #     model_info[model_name] = {}
-    #     for key in models[model_name]:
-    #         if key not in ["connection", "ngrams"]:
-    #             model_info[model_name][key] = models[model_name][key]
+    model_info = {}
+    for model_name in models:
+        model_info[model_name] = {}
+        for key in models[model_name]:
+            if key not in ["connection", "ngrams"]:
+                model_info[model_name][key] = models[model_name][key]
+    return JSONResponse(content=model_info)
 
-    return JSONResponse(content=models)
 
-
-def bundle_context(form_result: dict) -> dict:
+def bundle_context(form_result: dict) -> Dict[str, List]:
     """Bundle the contexts together into."""
     result = {
         "left": [],
@@ -88,3 +113,7 @@ def bundle_context(form_result: dict) -> dict:
         # Sort by score
         result[context] = sorted(ngrams, key=lambda x: x[1], reverse=True)
     return result
+
+
+if not enable_security:
+    app.dependency_overrides[api_key_security] = lambda: None

@@ -1,5 +1,6 @@
 # DSL
 config.ini
+sqlite.db
 tmp_*
 *_t01_*
 
@@ -132,3 +133,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.gitsecret/keys/random_seed
+!*.secret
+secrets.env
+apikeys.dev.txt
+apikeys.prod.txt

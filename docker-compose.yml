@@ -4,3 +4,12 @@ services:
     build: .
     ports:
       - "9005:8000"
+    volumes:
+      - ${API_KEYS_FILE}:/app/apikeys.txt
+    environment:
+      - FAST_API_SIMPLE_SECURITY_AUTOMATIC_EXPIRATION=90
+      - FASTAPI_SIMPLE_SECURITY_API_KEY_FILE=/app/apikeys.txt
+      - LOG_LEVEL=${LOG_LEVEL}
+      - ENABLE_SECURITY=${ENABLE_SECURITY}
+    env_file:
+      - ./secrets.env
