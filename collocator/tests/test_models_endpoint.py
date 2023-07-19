@@ -4,6 +4,7 @@ from os import environ
 
 environ["ENABLE_SECURITY"] = "false"
 environ["FASTAPI_SIMPLE_SECURITY_API_KEY_FILE"] = ""
+environ["FORCE_NEW_DB"] = "true"
 
 from collocator import CONFIG
 from collocator.app import app
