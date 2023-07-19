@@ -7,22 +7,22 @@ Webservice to search in simple ngram collocations.
 ```bash
 git clone https://github.com/dsldk/collocator/ collocator/
 cd collocator
-docker compose up
+docker compose --env dev.env up
 ```
 
-The webservice will now be accessible on localhost:9003
+The webservice will now be accessible on localhost:9005
 
 ## Endpoints
 
-See localhost:9003/docs
+See localhost:9005/docs
 
 E.g.
 
 ```url
-http://localhost:9003/models
-http://localhost:9003/search/infomedia/hus
-http://localhost:9003/search/infomedia/hus?threshold=0.4
-http://localhost:9003/search/infomedia/hus?forms=hus,huset,huse,husene
+http://localhost:9005/models
+http://localhost:9005/search/infomedia/hus
+http://localhost:9005/search/infomedia/hus?threshold=0.4
+http://localhost:9005/search/infomedia/hus?forms=hus,huset,huse,husene
 ```
 
 ## Usage from Python module
@@ -31,7 +31,7 @@ http://localhost:9003/search/infomedia/hus?forms=hus,huset,huse,husene
 import requests
 from json import loads
 
-URL = "http://localhost:9003"
+URL = "http://localhost:9005"
 
 # Available models:
 response = requests.get(f"{URL}/models")

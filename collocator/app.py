@@ -62,7 +62,19 @@ async def search(
     forms: str = "",
     verbose_output: bool = True,
 ) -> JSONResponse:
-    """Check wheter word might be a valid word in the given language."""
+    """Return a list of ngrams for a given word, divided into left, right, 'in' contexts
+
+    Args:
+        word (str): The word the lookup
+        model (_type_): The model to use. See /models endpoint for available models.
+        threshold (float, optional): Threshold score for ngrams to return. Defaults to 0.3.
+        bundle_contexts (bool, optional): If True alle word forms are bundled. Defaults to True.
+        forms (str, optional): Comma separated lists of inflected forms. Defaults to "".
+        verbose_output (bool, optional): If true include model information in response. Defaults to True.
+
+    Returns:
+        A JSON formatted response with the ngrams
+    """
     lookup_forms = [word]
     if forms:
         lookup_forms += forms.split(",")
@@ -93,7 +105,12 @@ async def search(
     "/models", response_class=JSONResponse, dependencies=[Depends(api_key_security)]
 )
 async def available_models() -> JSONResponse:
-    """Return a list of available models."""
+    """Return a list of available models.
+
+    Returns:
+        A JSON formatted response with the available models and their information
+    """
+
     model_info = {}
     for model_name in models:
         model_info[model_name] = {}
@@ -104,7 +121,14 @@ async def available_models() -> JSONResponse:
 
 
 def bundle_context(form_result: dict) -> Dict[str, List]:
-    """Bundle the contexts together into."""
+    """Bundle the contexts of all forms together into a single list for left, right, and 'in' contexts.
+
+    Args:
+        form_result (dict): The ngram results of alle word forms
+
+    Returns
+        The bundled ngram results
+    """
     result = {
         "left": [],
         "right": [],
