@@ -5,12 +5,20 @@ import os
 import sqlite3
 import tempfile
 from pathlib import Path
+from typing import Dict, List, Tuple
 
 from collocator import logger, timeit, CONFIG
 
 
 async def load_all_models(force: bool = False) -> dict:
-    """Load all models from config."""
+    """Load all models from config.
+
+    Args:
+        force: Force creation of new databases.
+
+    Returns:
+        Dictionary with model names as keys and dictionaries with model info as values.
+    """
     models = {}
     for model_name in CONFIG.get("general", "models").split(","):
         source_file = os.path.join(
@@ -34,7 +42,14 @@ async def load_all_models(force: bool = False) -> dict:
 
 @timeit
 async def load_ngrams(source_file: str) -> dict:
-    """Load ngrams from json file."""
+    """Load ngrams from json file.
+
+    Args:
+        source_file: Path to json file with ngrams.
+
+    Returns:
+        Dictionary with ngrams.
+    """
     logger.info("Loading ngrams from %s", source_file)
     # Determine relative path to source file
     source_file = str(Path(__file__).parent.resolve() / source_file)
@@ -47,7 +62,16 @@ async def load_ngrams(source_file: str) -> dict:
 async def store_ngrams_in_database(
     ngrams: dict, model_name: str, force_new: bool = False
 ) -> sqlite3.Connection:
-    """Store ngrams in a sqlite database in temporary dir."""
+    """Store ngrams in a sqlite database in temporary dir.
+
+    Args:
+        ngrams: Dictionary with ngrams.
+        model_name: Name of the model.
+        force_new: Force creation of new database or not.
+
+    Returns:
+        Connection to Sqlite database.
+    """
     tempdir = tempfile.gettempdir()
     database_file = f"{tempdir}/ngrams_{model_name}.db"
 
@@ -103,8 +127,17 @@ async def store_ngrams_in_database(
 @timeit
 async def search_ngrams(
     word: str, conn: sqlite3.Connection, threshold: float = 0.0
-) -> dict:
-    """Search the ngrams database for a word."""
+) -> Dict[str, List[Tuple[str, float]]]:
+    """Search the ngrams database for a word.
+
+    Args:
+        word: The word to search for.
+        conn: Connection to the ngrams database.
+        threshold: Threshold score for ngrams to return. Defaults to 0.0 = all ngrams in db are returned
+
+    Returns:
+        Dictionary with ngrams divided into left, right and 'in' contexts.
+    """
     cur = conn.cursor()
     cur.execute(
         "SELECT w.word, w.position, n.ngram, n.length, n.score FROM ngrams n, words w WHERE n.id = w.ngram_id AND w.word = ?",
