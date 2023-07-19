@@ -11,5 +11,6 @@ services:
       - FASTAPI_SIMPLE_SECURITY_API_KEY_FILE=/app/apikeys.txt
       - LOG_LEVEL=${LOG_LEVEL}
       - ENABLE_SECURITY=${ENABLE_SECURITY}
+      - FORCE_NEW_DB=True
     env_file:
       - ./secrets.env

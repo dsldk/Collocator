@@ -45,8 +45,12 @@ def healthcheck() -> str:
 @app.on_event("startup")
 async def startup_event() -> None:
     """Load all models on startup."""
+    force_new = (
+        environ.get("FORCE_NEW_DB", "False").lower() in ("true", "1") and True or False
+    )
+    logger.info(f"Force new database: {force_new}")
     global models
-    models = await load_all_models()
+    models = await load_all_models(force=force_new)
 
 
 @app.get("/search/{model}/{word}", response_class=JSONResponse)
