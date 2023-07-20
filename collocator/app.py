@@ -53,7 +53,11 @@ async def startup_event() -> None:
     models = await load_all_models(force=force_new)
 
 
-@app.get("/search/{model}/{word}", response_class=JSONResponse)
+@app.get(
+    "/search/{model}/{word}",
+    response_class=JSONResponse,
+    dependencies=[Depends(api_key_security)],
+)
 async def search(
     word: str,
     model,
