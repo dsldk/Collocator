@@ -1,31 +1,63 @@
 """FastAPI service for wordres."""
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi_simple_security import api_key_router, api_key_security
+from os import environ
+from typing import Dict, List
 
 from collocator import CONFIG, logger
 from collocator.main import load_all_models, search_ngrams
 
-title = CONFIG.get("general", "title")
+enable_security = environ.get("ENABLE_SECURITY", "False")
+
+enable_security = enable_security.lower() in ("true", "1") and True or False
+security_str = (
+    "\033[1;32mENABLED\033[0m" if enable_security else "\033[1;31mDISABLED\033[0m"
+)
+
+logger.info(f"Security: {security_str}")
+logger.info(f"Logging level: {environ.get('LOG_LEVEL')}")
+
+origins = (
+    CONFIG.has_section("webservice")
+    and CONFIG.has_option("webservice", "origin")
+    and CONFIG.get("webservice", "origin")
+    or None
+)
+logger.info(f"Origins: {origins}")
 
 app = FastAPI(
     title=CONFIG.get("general", "title"),
     description=CONFIG.get("general", "description"),
 )
+if origins:
+    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True)
+app.include_router(api_key_router, prefix="/auth", tags=["_auth"])
 
 
 @app.get("/health", response_class=PlainTextResponse)
 def healthcheck() -> str:
-    """Healthcheck, for use in automatic ."""
+    """Healthcheck, for use in automatic monitoring."""
     return "200"
 
 
 @app.on_event("startup")
 async def startup_event() -> None:
+    """Load all models on startup."""
+    force_new = (
+        environ.get("FORCE_NEW_DB", "False").lower() in ("true", "1") and True or False
+    )
+    logger.info(f"Force new database: {force_new}")
     global models
-    models = await load_all_models()
+    models = await load_all_models(force=force_new)
 
 
-@app.get("/search/{model}/{word}", response_class=JSONResponse)
+@app.get(
+    "/search/{model}/{word}",
+    response_class=JSONResponse,
+    dependencies=[Depends(api_key_security)],
+)
 async def search(
     word: str,
     model,
@@ -34,7 +66,19 @@ async def search(
     forms: str = "",
     verbose_output: bool = True,
 ) -> JSONResponse:
-    """Check wheter word might be a valid word in the given language."""
+    """Return a list of ngrams for a given word, divided into left, right, 'in' contexts
+
+    Args:
+        word (str): The word the lookup
+        model (_type_): The model to use. See /models endpoint for available models.
+        threshold (float, optional): Threshold score for ngrams to return. Defaults to 0.3.
+        bundle_contexts (bool, optional): If True alle word forms are bundled. Defaults to True.
+        forms (str, optional): Comma separated lists of inflected forms. Defaults to "".
+        verbose_output (bool, optional): If true include model information in response. Defaults to True.
+
+    Returns:
+        A JSON formatted response with the ngrams
+    """
     lookup_forms = [word]
     if forms:
         lookup_forms += forms.split(",")
@@ -61,21 +105,34 @@ async def search(
     return JSONResponse(content=message)
 
 
-@app.get("/models", response_class=JSONResponse)
-def available_models() -> JSONResponse:
-    """Return a list of available models."""
+@app.get(
+    "/models", response_class=JSONResponse, dependencies=[Depends(api_key_security)]
+)
+async def available_models() -> JSONResponse:
+    """Return a list of available models.
+
+    Returns:
+        A JSON formatted response with the available models and their information
+    """
+
     model_info = {}
     for model_name in models:
         model_info[model_name] = {}
         for key in models[model_name]:
             if key not in ["connection", "ngrams"]:
                 model_info[model_name][key] = models[model_name][key]
-
     return JSONResponse(content=model_info)
 
 
-def bundle_context(form_result: dict) -> dict:
-    """Bundle the contexts together into."""
+def bundle_context(form_result: dict) -> Dict[str, List]:
+    """Bundle the contexts of all forms together into a single list for left, right, and 'in' contexts.
+
+    Args:
+        form_result (dict): The ngram results of alle word forms
+
+    Returns
+        The bundled ngram results
+    """
     result = {
         "left": [],
         "right": [],
@@ -88,3 +145,7 @@ def bundle_context(form_result: dict) -> dict:
         # Sort by score
         result[context] = sorted(ngrams, key=lambda x: x[1], reverse=True)
     return result
+
+
+if not enable_security:
+    app.dependency_overrides[api_key_security] = lambda: None
