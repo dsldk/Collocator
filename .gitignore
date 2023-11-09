@@ -140,3 +140,4 @@ apikeys.dev.txt
 apikeys.prod.txt
 collocator/data/ngrams_memo1.1_1870-79_min5_t0.3_npmi.model
 .gitignore
+collocator/data/ngrams_memo1.1_1880-89_min5_t0.3_npmi.model
